@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Material de Apoyo Teórico (UT 3) · Arquitectura Híbrida RAID 1 + RAID 5</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tipografías editoriales y monoespaciadas -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            navy: {
+              900: '#0F172A',
+              800: '#1E3A8A',
+              700: '#1D4ED8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Estilos de apoyo para transiciones suaves y estética de libro de texto técnico */
+    body {
+      background-color: #F8FAFC;
+      color: #0F172A;
+      -webkit-font-smoothing: antialiased;
+    }
+    .textbook-card {
+      background-color: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+    }
+    .tab-btn {
+      transition: all 0.2s ease;
+    }
+    .tab-btn.active {
+      background-color: #0F172A;
+      color: #FFFFFF;
+      border-color: #0F172A;
+      box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.15);
+    }
+    .block-pulse {
+      animation: blockAppear 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes blockAppear {
+      0% { opacity: 0; transform: translateY(-8px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .read-glow {
+      animation: readPulse 0.9s ease-in-out;
+    }
+    @keyframes readPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.35); }
+    }
+    .xor-flash {
+      animation: xorHighlight 0.8s ease-in-out;
+    }
+    @keyframes xorHighlight {
+      0%, 100% { background-color: #FEF3C7; border-color: #D97706; }
+      50% { background-color: #FDE68A; border-color: #B45309; transform: scale(1.03); }
+    }
+    .code-token {
+      cursor: pointer;
+      border-bottom: 1.5px dashed #60A5FA;
+      padding: 1px 4px;
+      border-radius: 4px;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .code-token:hover, .code-token.selected-token {
+      background-color: #1E3A8A;
+      color: #FFFFFF;
+      border-bottom-color: #93C5FD;
+    }
+    /* Barra de desplazamiento discreta para consola */
+    .terminal-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .terminal-scroll::-webkit-scrollbar-track {
+      background: #0F172A;
+    }
+    .terminal-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- CABECERA EDITORIAL DEL LIBRO DE TEXTO TÉCNICO -->
+  <header class="bg-[#0F172A] text-white border-b-4 border-[#1E3A8A]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1E3A8A] text-blue-100 text-xs font-semibold tracking-wide uppercase mb-3 border border-blue-700/60">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            Material de Apoyo Teórico · UT 3 · Infraestructura IT AgroDatos Andalucía S.L.
+          </div>
+          <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
+            Arquitectura Híbrida de Almacenamiento Redundante (RAID 1 + RAID 5)
+          </h1>
+          <p class="mt-2 text-slate-300 text-sm sm:text-base max-w-3xl leading-relaxed">
+            Guía conceptual e interactiva de apoyo a la Práctica de Laboratorio 1 en Ubuntu Server LTS: topología física y lógica, dinámica interna de bloques, cálculo de paridad XOR, resiliencia ante fallos y persistencia mediante <code class="font-mono text-emerald-300 bg-slate-800/90 px-1.5 py-0.5 rounded text-xs sm:text-sm">mdadm</code>.
+          </p>
+        </div>
+
+        <!-- Selector ilustrativo de Puesto (XX) para contextualizar rutas en los ejemplos -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-3.5 sm:p-4 shrink-0 self-start lg:self-center">
+          <label for="puesto-input" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+            Contexto de Puesto (<span class="font-mono text-amber-300">XX</span>)
+          </label>
+          <div class="flex items-center gap-2">
+            <input
+              id="puesto-input"
+              type="text"
+              maxlength="2"
+              value="07"
+              aria-label="Número de puesto de dos dígitos"
+              class="w-16 px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-600 text-center font-mono font-bold text-amber-300 text-sm focus:outline-none focus:border-emerald-400"
+            />
+            <span class="text-xs text-slate-400 max-w-[160px] leading-snug">
+              Actualiza dinámicamente las rutas y etiquetas de ejemplo.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECUADRO INICIAL DESTACADO: OBJETIVOS DE APRENDIZAJE -->
+      <div class="mt-6 bg-slate-900/90 border border-slate-700/80 border-l-4 border-l-emerald-500 rounded-xl p-4 sm:p-5">
+        <div class="flex items-center justify-between gap-2 mb-2.5">
+          <h2 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+            <span aria-hidden="true">🎯</span> Objetivos de aprendizaje
+          </h2>
+          <span class="text-xs font-mono text-slate-400 hidden sm:inline">Criterios de Evaluación: CE 2.b · CE 2.d</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs sm:text-sm text-slate-200">
+          <div class="flex items-start gap-2.5">
+            <span class="mt-0.5 text-emerald-400 font-bold">01.</span>
+            <p>Comprender la <strong>arquitectura híbrida de doble nivel</strong> (RAID 1 + RAID 5) y su adecuación a cargas transaccionales críticas frente a almacenamiento masivo departamental.</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <span class="mt-0.5 text-emerald-400 font-bold">02.</span>
+            <p>Visualizar el comportamiento interno de <strong>lectura paralela, escritura en espejo y paridad distribuida XOR</strong>, incluyendo la penalización de escritura (<em>Write Penalty</em>).</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <span class="mt-0.5 text-emerald-400 font-bold">03.</span>
+            <p>Analizar la respuesta del kernel Linux ante el <strong>fallo de un disco físico (modo degradado)</strong> y el proceso de reconstrucción (<em>rebuild</em>) sin pérdida de disponibilidad.</p>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <span class="mt-0.5 text-emerald-400 font-bold">04.</span>
+            <p>Dominar las <strong>cinco capas de configuración y persistencia</strong> en Ubuntu Server (<code class="font-mono text-blue-300">mdadm</code>, <code class="font-mono text-blue-300">mdadm.conf</code>, <code class="font-mono text-blue-300">initramfs</code> y <code class="font-mono text-blue-300">/etc/fstab</code> con <code class="font-mono text-amber-300">UUID</code> y <code class="font-mono text-amber-300">nofail</code>).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- BARRA DE NAVEGACIÓN POR VISTAS TEÓRICAS -->
+  <nav aria-label="Secciones del material teórico" class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
+      <div class="flex flex-wrap items-center gap-2" role="tablist">
+        <button
+          role="tab"
+          aria-selected="true"
+          data-tab="vista1"
+          class="tab-btn active px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-slate-200 flex items-center gap-2"
+        >
+          <span class="w-5 h-5 rounded bg-blue-100 text-[#1E3A8A] font-bold text-xs flex items-center justify-center">1</span>
+          <span>Arquitectura Híbrida del Servidor</span>
+        </button>
+
+        <button
+          role="tab"
+          aria-selected="false"
+          data-tab="vista2"
+          class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center gap-2"
+        >
+          <span class="w-5 h-5 rounded bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center">2</span>
+          <span>Simulador Gráfico (Lectura, Escritura y Fallos)</span>
+        </button>
+
+        <button
+          role="tab"
+          aria-selected="false"
+          data-tab="vista3"
+          class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center gap-2"
+        >
+          <span class="w-5 h-5 rounded bg-indigo-100 text-indigo-800 font-bold text-xs flex items-center justify-center">3</span>
+          <span>Configuración y Persistencia en Linux</span>
+        </button>
+
+        <button
+          role="tab"
+          aria-selected="false"
+          data-tab="vista4"
+          class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center gap-2"
+        >
+          <span class="w-5 h-5 rounded bg-amber-100 text-amber-800 font-bold text-xs flex items-center justify-center">4</span>
+          <span>Resumen y Glosario Técnico</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+    <!-- ===================================================================== -->
+    <!-- VISTA 1: ARQUITECTURA HÍBRIDA DEL SERVIDOR                            -->
+    <!-- ===================================================================== -->
+    <section id="vista1" class="tab-panel space-y-6">
+      <!-- Introducción de sección -->
+      <div class="textbook-card p-5 sm:p-6 border-l-4 border-l-[#1E3A8A]">
+        <span class="text-xs font-bold uppercase tracking-wider text-[#1E3A8A]">Capítulo 1 · Diseño de Topología Física y Lógica</span>
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
+          Topología del Servidor de AgroDatos Andalucía S.L.
+        </h2>
+        <p class="mt-2 text-sm sm:text-base text-slate-600 leading-relaxed">
+          En infraestructuras empresariales reales, un único nivel RAID rara vez satisface todas las necesidades de negocio. El servidor de <strong>AgroDatos Andalucía S.L.</strong> separa el sistema operativo de dos matrices independientes gestionadas por software (<code class="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">mdadm</code>). <strong>Haz clic sobre cada bloque de almacenamiento en el diagrama</strong> para inspeccionar su arquitectura, carga de trabajo y justificación técnica.
+        </p>
+      </div>
+
+      <!-- Diagrama Interactivo + Panel Lateral -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Columna Izquierda (7 cols): Diagrama Arquitectónico Interactivo -->
+        <div class="lg:col-span-7 textbook-card p-5 sm:p-6">
+          <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+            <div>
+              <h3 class="font-bold text-slate-900 text-base sm:text-lg">Diagrama de Capas de Almacenamiento</h3>
+              <p class="text-xs text-slate-500">Servidor Linux dedicado · Controlador virtual SATA/SCSI (6 unidades)</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 font-mono text-xs font-semibold">
+              Ubuntu Server LTS
+            </span>
+          </div>
+
+          <div class="space-y-4">
+            <!-- BLOQUE 0: DISCO DEL SISTEMA (/dev/sda) -->
+            <button
+              type="button"
+              data-arch="system"
+              class="arch-node w-full text-left p-4 rounded-xl border-2 border-slate-300 bg-slate-50/70 hover:border-[#0F172A] transition-all focus:outline-none"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div class="flex items-center gap-2.5">
+                  <span class="px-2.5 py-0.5 rounded bg-[#0F172A] text-white font-mono text-xs font-bold">SISTEMA BASE</span>
+                  <span class="font-bold text-slate-900 text-sm sm:text-base">Disco del Sistema Operativo</span>
+                </div>
+                <span class="font-mono text-xs font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
+                  Sin RAID · Aislado
+                </span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center mt-2">
+                <div class="bg-white border border-slate-200 rounded-lg p-2.5 flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-md bg-slate-800 text-white flex items-center justify-center font-mono text-xs font-bold">sda</div>
+                  <div>
+                    <div class="font-mono text-xs font-bold text-slate-900">/dev/sda</div>
+                    <div class="text-[11px] text-slate-500">Unidad principal SO</div>
+                  </div>
+                </div>
+                <div class="hidden sm:flex justify-center text-slate-400 font-mono text-xs">
+                  ───▶ Partición raíz /
+                </div>
+                <div class="bg-slate-800 text-slate-100 rounded-lg p-2.5 font-mono text-xs">
+                  <div class="text-slate-400 text-[10px]">PUNTO DE MONTAJE</div>
+                  <div class="font-semibold text-white">/ (ext4 / LVM)</div>
+                </div>
+              </div>
+            </button>
+
+            <!-- BLOQUE 1: NIVEL 1 — RAID 1 (/dev/md0) -->
+            <button
+              type="button"
+              data-arch="raid1"
+              class="arch-node w-full text-left p-4 rounded-xl border-2 border-emerald-600 bg-emerald-50/40 ring-2 ring-emerald-500/20 hover:border-emerald-700 transition-all focus:outline-none"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div class="flex items-center gap-2.5">
+                  <span class="px-2.5 py-0.5 rounded bg-[#059669] text-white font-mono text-xs font-bold">NIVEL 1 · RAID 1</span>
+                  <span class="font-bold text-slate-900 text-sm sm:text-base">Alta Disponibilidad (Mirroring / Espejo)</span>
+                </div>
+                <span class="font-mono text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded border border-emerald-200">
+                  2 GB Útiles (50%)
+                </span>
+              </div>
+
+              <!-- Flujo visual: Discos físicos -> Dispositivo md -> Sistema de archivos -> Montaje -->
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+                <!-- Discos físicos -->
+                <div class="sm:col-span-4 space-y-1.5">
+                  <div class="bg-white border border-emerald-200 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+                    <span class="font-mono text-xs font-bold text-slate-800">/dev/sdb</span>
+                    <span class="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-1.5 rounded">2 GB</span>
+                  </div>
+                  <div class="bg-white border border-emerald-200 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+                    <span class="font-mono text-xs font-bold text-slate-800">/dev/sdc</span>
+                    <span class="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-1.5 rounded">2 GB</span>
+                  </div>
+                </div>
+
+                <!-- Dispositivo lógico mdadm -->
+                <div class="sm:col-span-3 bg-emerald-700 text-white rounded-lg p-2.5 text-center">
+                  <div class="text-[10px] uppercase tracking-wider text-emerald-200">Array mdadm</div>
+                  <div class="font-mono text-sm font-bold">/dev/md0</div>
+                  <div class="text-[10px] text-emerald-100 mt-0.5">Espejo [UU]</div>
+                </div>
+
+                <!-- Formateo y punto de montaje -->
+                <div class="sm:col-span-5 bg-white border border-emerald-300 rounded-lg p-2.5">
+                  <div class="flex items-center justify-between text-[11px] mb-1">
+                    <span class="text-slate-500">FS: <strong class="font-mono text-slate-800">ext4</strong></span>
+                    <span class="font-mono font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                      CRITICO_<span class="puesto-span">07</span>
+                    </span>
+                  </div>
+                  <div class="font-mono text-xs font-bold text-slate-900 truncate" title="/srv/agrodatos_critico_07">
+                    /srv/agrodatos_critico_<span class="puesto-span">07</span>
+                  </div>
+                </div>
+              </div>
+            </button>
+
+            <!-- BLOQUE 2: NIVEL 2 — RAID 5 (/dev/md1) -->
+            <button
+              type="button"
+              data-arch="raid5"
+              class="arch-node w-full text-left p-4 rounded-xl border-2 border-indigo-200 bg-indigo-50/30 hover:border-[#4F46E5] transition-all focus:outline-none"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div class="flex items-center gap-2.5">
+                  <span class="px-2.5 py-0.5 rounded bg-[#4F46E5] text-white font-mono text-xs font-bold">NIVEL 2 · RAID 5</span>
+                  <span class="font-bold text-slate-900 text-sm sm:text-base">Almacenamiento Masivo (Paridad Distribuida)</span>
+                </div>
+                <span class="font-mono text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded border border-amber-200">
+                  4 GB Útiles (66,7%)
+                </span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+                <!-- 3 Discos físicos -->
+                <div class="sm:col-span-4 space-y-1">
+                  <div class="bg-white border border-indigo-200 rounded-lg px-2.5 py-1 flex items-center justify-between">
+                    <span class="font-mono text-xs font-bold text-slate-800">/dev/sdd</span>
+                    <span class="text-[11px] font-mono text-indigo-700 bg-indigo-50 px-1.5 rounded">2 GB</span>
+                  </div>
+                  <div class="bg-white border border-indigo-200 rounded-lg px-2.5 py-1 flex items-center justify-between">
+                    <span class="font-mono text-xs font-bold text-slate-800">/dev/sde</span>
+                    <span class="text-[11px] font-mono text-indigo-700 bg-indigo-50 px-1.5 rounded">2 GB</span>
+                  </div>
+                  <div class="bg-white border border-indigo-200 rounded-lg px-2.5 py-1 flex items-center justify-between">
+                    <span class="font-mono text-xs font-bold text-slate-800">/dev/sdf</span>
+                    <span class="text-[11px] font-mono text-indigo-700 bg-indigo-50 px-1.5 rounded">2 GB</span>
+                  </div>
+                </div>
+
+                <!-- Dispositivo lógico mdadm -->
+                <div class="sm:col-span-3 bg-[#4F46E5] text-white rounded-lg p-2.5 text-center">
+                  <div class="text-[10px] uppercase tracking-wider text-indigo-200">Array mdadm</div>
+                  <div class="font-mono text-sm font-bold">/dev/md1</div>
+                  <div class="text-[10px] text-amber-200 mt-0.5">Paridad XOR [UUU]</div>
+                </div>
+
+                <!-- Formateo y punto de montaje -->
+                <div class="sm:col-span-5 bg-white border border-indigo-300 rounded-lg p-2.5">
+                  <div class="flex items-center justify-between text-[11px] mb-1">
+                    <span class="text-slate-500">FS: <strong class="font-mono text-slate-800">ext4</strong></span>
+                    <span class="font-mono font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                      DATOS_<span class="puesto-span">07</span>
+                    </span>
+                  </div>
+                  <div class="font-mono text-xs font-bold text-slate-900 truncate" title="/srv/agrodatos_datos_07">
+                    /srv/agrodatos_datos_<span class="puesto-span">07</span>
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Columna Derecha (5 cols): Panel Explicativo Contextual -->
+        <aside id="arch-inspector" class="lg:col-span-5 textbook-card p-5 sm:p-6 border-t-4 border-t-[#059669]">
+          <!-- Renderizado dinámicamente vía JS -->
+        </aside>
+      </div>
+
+      <!-- Tabla Comparativa Rápida -->
+      <div class="textbook-card overflow-hidden">
+        <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="font-bold text-slate-900 text-sm sm:text-base">Cuadro Sinóptico de Dimensionamiento Arquitectónico</h3>
+          <span class="text-xs text-slate-500">Unidades físicas de S = 2 GiB</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr class="bg-[#0F172A] text-white">
+                <th class="py-3 px-4 font-semibold">Parámetro Técnico</th>
+                <th class="py-3 px-4 font-semibold text-emerald-300">Nivel 1 · /dev/md0 (RAID 1)</th>
+                <th class="py-3 px-4 font-semibold text-amber-300">Nivel 2 · /dev/md1 (RAID 5)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              <tr>
+                <td class="py-2.5 px-4 font-semibold text-slate-800">Discos físicos miembros</td>
+                <td class="py-2.5 px-4 font-mono text-slate-700">/dev/sdb, /dev/sdc (N = 2)</td>
+                <td class="py-2.5 px-4 font-mono text-slate-700">/dev/sdd, /dev/sde, /dev/sdf (N = 3)</td>
+              </tr>
+              <tr class="bg-slate-50/70">
+                <td class="py-2.5 px-4 font-semibold text-slate-800">Capacidad bruta total</td>
+                <td class="py-2.5 px-4">2 × 2 GiB = <strong>4 GiB</strong></td>
+                <td class="py-2.5 px-4">3 × 2 GiB = <strong>6 GiB</strong></td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-4 font-semibold text-slate-800">Fórmula de capacidad útil</td>
+                <td class="py-2.5 px-4 font-mono text-emerald-800 font-semibold">C = S = 2 GiB (50,0 %)</td>
+                <td class="py-2.5 px-4 font-mono text-indigo-800 font-semibold">C = (N − 1) × S = 4 GiB (66,7 %)</td>
+              </tr>
+              <tr class="bg-slate-50/70">
+                <td class="py-2.5 px-4 font-semibold text-slate-800">Tolerancia a fallos</td>
+                <td class="py-2.5 px-4">1 disco simultáneo (hasta N − 1)</td>
+                <td class="py-2.5 px-4">1 disco simultáneo (estrictamente 1)</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-4 font-semibold text-slate-800">Rendimiento en escritura</td>
+                <td class="py-2.5 px-4 text-emerald-700 font-medium">Óptimo (escritura espejo directa sin paridad)</td>
+                <td class="py-2.5 px-4 text-amber-700 font-medium">Penalizado (cálculo XOR + escritura de paridad)</td>
+              </tr>
+              <tr class="bg-slate-50/70">
+                <td class="py-2.5 px-4 font-semibold text-slate-800">Carga de trabajo en AgroDatos</td>
+                <td class="py-2.5 px-4">BD transaccional y logs de auditoría legal</td>
+                <td class="py-2.5 px-4">Imágenes satelitales, informes y copias</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BLOQUE EDITORIAL DESTACADO: 📌 PROFUNDIZA -->
+      <div class="bg-teal-50/70 border border-teal-200 border-l-4 border-l-teal-600 rounded-xl p-5 sm:p-6">
+        <h3 class="text-base sm:text-lg font-bold text-teal-950 flex items-center gap-2 mb-3">
+          <span aria-hidden="true">📌</span> Profundiza: Fórmulas de capacidad y diferencia entre capacidad teórica y real (<code class="font-mono text-sm bg-white px-1.5 py-0.5 rounded border border-teal-200">df -h</code>)
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm text-slate-700 leading-relaxed">
+          <div class="bg-white/90 rounded-lg p-4 border border-teal-100">
+            <h4 class="font-bold text-slate-900 mb-1.5">1. Formulación matemática del aprovechamiento</h4>
+            <p class="mb-2">
+              Dado un conjunto de <code class="font-mono font-bold">N</code> discos idénticos de tamaño individual <code class="font-mono font-bold">S</code>:
+            </p>
+            <ul class="space-y-1.5 text-xs sm:text-sm">
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-600 font-bold">•</span>
+                <span><strong>RAID 1 (Mirroring):</strong> <code class="font-mono bg-slate-100 px-1 rounded">C_útil = S</code>. Al duplicar íntegramente los bloques en ambos discos, la eficiencia es del <code class="font-mono">1/N = 50%</code>.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-indigo-600 font-bold">•</span>
+                <span><strong>RAID 5 (Paridad distribuida):</strong> <code class="font-mono bg-slate-100 px-1 rounded">C_útil = (N − 1) × S</code>. El equivalente a la capacidad de un disco se reparte en bloques de paridad XOR entre todas las unidades, alcanzando una eficiencia del <code class="font-mono">(N−1)/N = 66,7%</code> con 3 discos.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="bg-white/90 rounded-lg p-4 border border-teal-100">
+            <h4 class="font-bold text-slate-900 mb-1.5">2. ¿Por qué <code class="font-mono text-xs">df -h</code> muestra menos espacio del teórico?</h4>
+            <p class="mb-2">
+              Al inspeccionar los volúmenes montados con <code class="font-mono text-xs bg-slate-100 px-1 rounded">df -h</code>, observarás unos megabytes menos respecto a los 2,0 GiB y 4,0 GiB teóricos debido a tres reservas estructurales:
+            </p>
+            <ul class="space-y-1 text-xs sm:text-sm">
+              <li><strong>a) Superbloque de metadatos <code class="font-mono">mdadm</code> (v1.2):</strong> Ocupa espacio al inicio de cada disco físico para almacenar el UUID del array, el nivel RAID y el <em>bitmap</em> de sincronización.</li>
+              <li><strong>b) Tablas de inodos y <em>journal</em> de <code class="font-mono">ext4</code>:</strong> El formateo reserva ~1,5–2 % para inodos y el registro transaccional de integridad.</li>
+              <li><strong>c) Bloques reservados para <code class="font-mono">root</code> (5 %):</strong> Por defecto <code class="font-mono">mkfs.ext4</code> aparta un 5 % exclusivo para procesos privilegiados, evitando que un llenado accidental bloquee el servidor.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- VISTA 2: SIMULADOR GRÁFICO DE FUNCIONAMIENTO                          -->
+    <!-- ===================================================================== -->
+    <section id="vista2" class="tab-panel hidden space-y-6">
+      <!-- Cabecera explicativa -->
+      <div class="textbook-card p-5 sm:p-6 border-l-4 border-l-emerald-600">
+        <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Capítulo 2 · Dinámica Interna de Bloques y Resiliencia</span>
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
+          Laboratorio Visual Comparativo: RAID 1 (<code class="font-mono text-lg">/dev/md0</code>) vs. RAID 5 (<code class="font-mono text-lg">/dev/md1</code>)
+        </h2>
+        <p class="mt-2 text-sm sm:text-base text-slate-600 leading-relaxed">
+          Explora cómo el subsistema de bloques del kernel Linux gestiona simultáneamente ambos arrays ante operaciones de escritura, lectura paralela, avería de un disco físico (<strong>modo degradado</strong>) y reconstrucción (<strong>rebuild</strong>). También puedes hacer clic directamente sobre cualquier disco físico para simular su desconexión o reparación.
+        </p>
+
+        <!-- Barra de Controles de Simulación -->
+        <div class="mt-5 pt-4 border-t border-slate-200 flex flex-wrap items-center gap-2.5">
+          <button
+            id="btn-sim-write"
+            type="button"
+            class="px-4 py-2.5 rounded-lg bg-[#1E3A8A] hover:bg-blue-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition flex items-center gap-2"
+          >
+            <span>✍️</span> Simular Escritura de Bloques
+          </button>
+
+          <button
+            id="btn-sim-read"
+            type="button"
+            class="px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition flex items-center gap-2"
+          >
+            <span>⚡</span> Simular Lectura Paralela
+          </button>
+
+          <button
+            id="btn-sim-fail"
+            type="button"
+            class="px-4 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition flex items-center gap-2"
+          >
+            <span>⚠️</span> Simular Fallo de Disco (Modo Degradado)
+          </button>
+
+          <button
+            id="btn-sim-rebuild"
+            type="button"
+            class="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-semibold shadow-sm transition flex items-center gap-2"
+          >
+            <span>🔄</span> Reconstruir Array (Rebuild)
+          </button>
+
+          <button
+            id="btn-sim-reset"
+            type="button"
+            class="ml-auto px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-300 transition"
+          >
+            Restaurar estado inicial
+          </button>
+        </div>
+      </div>
+
+      <!-- Banner de Estado de la Operación Actual -->
+      <div id="sim-status-banner" class="rounded-xl p-4 bg-blue-50 border border-blue-200 text-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <span id="sim-status-icon" class="text-xl mt-0.5">ℹ️</span>
+          <div>
+            <h3 id="sim-status-title" class="font-bold text-sm sm:text-base text-[#0F172A]">
+              Estado Nominal Activo: Ambos arrays sincronizados ([UU] y [UUU])
+            </h3>
+            <p id="sim-status-desc" class="text-xs sm:text-sm text-slate-600 mt-0.5">
+              Pulsa cualquiera de los botones superiores para observar el flujo de bloques, el cálculo de paridad XOR o el comportamiento ante el fallo de un disco.
+            </p>
+          </div>
+        </div>
+        <div id="sim-io-badge" class="shrink-0 font-mono text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-blue-200 text-[#1E3A8A]">
+          Estado: CLEAN
+        </div>
+      </div>
+
+      <!-- Comparativa Visual Simultánea: RAID 1 vs RAID 5 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- PANEL IZQUIERDO: RAID 1 (/dev/md0) -->
+        <div class="textbook-card p-5 border-t-4 border-t-[#059669] flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Nivel 1 · Espejo (Mirroring)</span>
+                <h3 class="text-lg font-bold text-slate-900 font-mono">/dev/md0 · CRITICO_<span class="puesto-span">07</span></h3>
+              </div>
+              <span id="r1-state-pill" class="font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                clean [UU]
+              </span>
+            </div>
+
+            <!-- Discos físicos RAID 1 -->
+            <div id="r1-disks-grid" class="grid grid-cols-2 gap-4 mt-4">
+              <!-- Renderizado dinámico por JS -->
+            </div>
+          </div>
+
+          <!-- Explicación técnica de comportamiento RAID 1 -->
+          <div id="r1-tech-note" class="mt-4 p-3.5 rounded-lg bg-emerald-50/70 border border-emerald-200 text-xs text-slate-700 leading-relaxed">
+            <strong>Comportamiento en RAID 1:</strong> Cada bloque escrito (<code class="font-mono">A1, A2, B1...</code>) se envía simultáneamente a <code class="font-mono">/dev/sdb</code> y <code class="font-mono">/dev/sdc</code> sin cálculo matemático de paridad. La latencia de escritura es mínima.
+          </div>
+        </div>
+
+        <!-- PANEL DERECHO: RAID 5 (/dev/md1) -->
+        <div class="textbook-card p-5 border-t-4 border-t-[#4F46E5] flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-700">Nivel 2 · Paridad Distribuida XOR</span>
+                <h3 class="text-lg font-bold text-slate-900 font-mono">/dev/md1 · DATOS_<span class="puesto-span">07</span></h3>
+              </div>
+              <span id="r5-state-pill" class="font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-300">
+                clean [UUU]
+              </span>
+            </div>
+
+            <!-- Discos físicos RAID 5 -->
+            <div id="r5-disks-grid" class="grid grid-cols-3 gap-3 mt-4">
+              <!-- Renderizado dinámico por JS -->
+            </div>
+          </div>
+
+          <!-- Explicación técnica de comportamiento RAID 5 + Write Penalty -->
+          <div id="r5-tech-note" class="mt-4 p-3.5 rounded-lg bg-amber-50/80 border border-amber-200 text-xs text-slate-700 leading-relaxed">
+            <strong>Penalización de Escritura (<em>Write Penalty</em>):</strong> En RAID 5 los datos se dividen en franjas (<em>stripes</em>) y la paridad <code class="font-mono font-bold text-amber-800">P = D1 ⊕ D2</code> rota entre los 3 discos. Modificar un bloque exige leer dato y paridad antiguos, recalcular XOR y escribir ambos (4 E/S).
+          </div>
+        </div>
+      </div>
+
+      <!-- VISOR TERMINAL EN VIVO: /proc/mdstat y mdadm --detail -->
+      <div class="rounded-xl overflow-hidden border border-slate-800 bg-[#0F172A] text-slate-100 shadow-lg">
+        <div class="px-4 py-2.5 bg-slate-900 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+            <span class="ml-2 font-mono text-xs text-slate-300 font-semibold">
+              Consola del Kernel Linux · Monitorización en Tiempo Real
+            </span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              data-term-view="mdstat"
+              class="term-mode-btn px-2.5 py-1 rounded text-xs font-mono font-semibold bg-[#1E3A8A] text-white"
+            >
+              cat /proc/mdstat
+            </button>
+            <button
+              type="button"
+              data-term-view="detail0"
+              class="term-mode-btn px-2.5 py-1 rounded text-xs font-mono font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700"
+            >
+              mdadm --detail /dev/md0
+            </button>
+            <button
+              type="button"
+              data-term-view="detail1"
+              class="term-mode-btn px-2.5 py-1 rounded text-xs font-mono font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700"
+            >
+              mdadm --detail /dev/md1
+            </button>
+          </div>
+        </div>
+        <pre id="live-terminal-output" class="p-4 sm:p-5 font-mono text-xs sm:text-[13px] leading-relaxed text-emerald-300 overflow-x-auto terminal-scroll"></pre>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- VISTA 3: CONFIGURACIÓN EN LINUX Y PERSISTENCIA EN EL ARRANQUE         -->
+    <!-- ===================================================================== -->
+    <section id="vista3" class="tab-panel hidden space-y-6">
+      <div class="textbook-card p-5 sm:p-6 border-l-4 border-l-[#4F46E5]">
+        <span class="text-xs font-bold uppercase tracking-wider text-indigo-700">Capítulo 3 · Pila de Almacenamiento en Ubuntu Server</span>
+        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
+          Las 5 Capas de Configuración y Persistencia en el Arranque
+        </h2>
+        <p class="mt-2 text-sm sm:text-base text-slate-600 leading-relaxed">
+          Crear un array en memoria no basta: sin registrar su topología en la imagen temprana de arranque (<code class="font-mono text-xs bg-slate-100 px-1 rounded">initramfs</code>) ni declarar su montaje seguro mediante <code class="font-mono text-xs bg-slate-100 px-1 rounded">UUID</code>, el servidor puede renombrar el dispositivo a <code class="font-mono text-xs bg-rose-50 text-rose-700 px-1 rounded">/dev/md127</code> o detener el arranque. <strong>Selecciona cada capa y haz clic en los parámetros resaltados del código</strong> para analizar su función exacta.
+        </p>
+      </div>
+
+      <!-- Selector de las 5 Capas -->
+      <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5" id="layers-selector">
+        <button type="button" data-layer="1" class="layer-btn text-left p-3.5 rounded-xl border-2 border-[#1E3A8A] bg-blue-50/70 transition-all">
+          <div class="text-[11px] font-mono font-bold text-[#1E3A8A]">CAPA 01</div>
+          <div class="font-bold text-slate-900 text-xs sm:text-sm mt-0.5">Reconocimiento de Bloques</div>
+          <div class="font-mono text-[11px] text-slate-500 mt-1">lsblk · fdisk -l</div>
+        </button>
+
+        <button type="button" data-layer="2" class="layer-btn text-left p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-400 transition-all">
+          <div class="text-[11px] font-mono font-bold text-emerald-700">CAPA 02</div>
+          <div class="font-bold text-slate-900 text-xs sm:text-sm mt-0.5">Creación de Matrices RAID</div>
+          <div class="font-mono text-[11px] text-slate-500 mt-1">mdadm --create</div>
+        </button>
+
+        <button type="button" data-layer="3" class="layer-btn text-left p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-400 transition-all">
+          <div class="text-[11px] font-mono font-bold text-indigo-700">CAPA 03</div>
+          <div class="font-bold text-slate-900 text-xs sm:text-sm mt-0.5">Formateo y Etiquetado</div>
+          <div class="font-mono text-[11px] text-slate-500 mt-1">mkfs.ext4 -L</div>
+        </button>
+
+        <button type="button" data-layer="4" class="layer-btn text-left p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-400 transition-all">
+          <div class="text-[11px] font-mono font-bold text-amber-700">CAPA 04</div>
+          <div class="font-bold text-slate-900 text-xs sm:text-sm mt-0.5">Ensamblado en Arranque</div>
+          <div class="font-mono text-[11px] text-slate-500 mt-1">mdadm.conf · initramfs</div>
+        </button>
+
+        <button type="button" data-layer="5" class="layer-btn text-left p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-400 transition-all">
+          <div class="text-[11px] font-mono font-bold text-teal-700">CAPA 05</div>
+          <div class="font-bold text-slate-900 text-xs sm:text-sm mt-0.5">Montaje Persistente</div>
+          <div class="font-mono text-[11px] text-slate-500 mt-1">blkid · /etc/fstab</div>
+        </button>
+      </div>
+
+      <!-- Visor Detallado de la Capa Seleccionada -->
+      <div id="layer-detail-container" class="textbook-card p-5 sm:p-6">
+        <!-- Renderizado dinámicamente por JS -->
+      </div>
+
+      <!-- BLOQUE EDITORIAL DESTACADO: 💡 RECUERDA -->
+      <div class="bg-amber-50/80 border border-amber-300 border-l-4 border-l-amber-600 rounded-xl p-5 sm:p-6">
+        <h3 class="text-base sm:text-lg font-bold text-amber-950 flex items-center gap-2 mb-3">
+          <span aria-hidden="true">💡</span> Recuerda: Diferencia crítica entre UUID del Array y UUID del Sistema de Archivos, y función de <code class="font-mono text-sm bg-white px-1.5 py-0.5 rounded border border-amber-300">nofail</code>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm text-slate-800 leading-relaxed">
+          <div class="bg-white/95 rounded-lg p-4 border border-amber-200">
+            <h4 class="font-bold text-slate-900 mb-1.5">Dos capas de identidad UUID distintas</h4>
+            <ul class="space-y-2 text-xs sm:text-sm">
+              <li>
+                <span class="inline-block px-2 py-0.5 rounded bg-indigo-100 text-indigo-900 font-mono font-bold text-xs mb-0.5">1. UUID del Array RAID</span><br />
+                Lo genera <code class="font-mono">mdadm</code> en los superbloques físicos (<code class="font-mono">/dev/sdb</code>, etc.). Se consulta con <code class="font-mono">mdadm --detail</code> y se guarda en <strong><code class="font-mono">/etc/mdadm/mdadm.conf</code></strong> para ensamblar los discos en <code class="font-mono">/dev/md0</code>.
+              </li>
+              <li>
+                <span class="inline-block px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono font-bold text-xs mb-0.5">2. UUID del Sistema de Archivos (ext4)</span><br />
+                Lo genera <code class="font-mono">mkfs.ext4</code> sobre el volumen lógico ya creado. Se consulta con <code class="font-mono">sudo blkid /dev/md0</code> y es el único válido para montar el directorio en <strong><code class="font-mono">/etc/fstab</code></strong>.
+              </li>
+            </ul>
+          </div>
+
+          <div class="bg-white/95 rounded-lg p-4 border border-amber-200">
+            <h4 class="font-bold text-slate-900 mb-1.5">¿Por qué es vital el parámetro <code class="font-mono text-amber-800">nofail</code> en <code class="font-mono">/etc/fstab</code>?</h4>
+            <p class="text-xs sm:text-sm mb-2">
+              Por defecto, si un volumen declarado en <code class="font-mono">/etc/fstab</code> no está disponible durante el arranque (por ejemplo, si una cabina externa tarda en inicializar o un array sufre un fallo múltiple de discos), <code class="font-mono">systemd</code> detiene todo el servidor y entra en <strong>modo de emergencia (<em>emergency.target</em>)</strong>, bloqueando el acceso SSH remoto.
+            </p>
+            <p class="text-xs sm:text-sm font-medium text-amber-950 bg-amber-50 p-2.5 rounded border border-amber-200">
+              Al incluir <code class="font-mono font-bold">defaults,nofail</code>, el sistema continúa el arranque de Ubuntu Server y permite que el administrador acceda por red para diagnosticar la incidencia.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- VISTA 4: RESUMEN DEL TEMA Y GLOSARIO DE TÉRMINOS                      -->
+    <!-- ===================================================================== -->
+    <section id="vista4" class="tab-panel hidden space-y-8">
+      
+      <!-- SECCIÓN: 📝 RESUMEN DEL TEMA -->
+      <div class="textbook-card p-6 sm:p-7 border-t-4 border-t-[#0F172A]">
+        <div class="flex items-center gap-2.5 mb-4">
+          <span class="text-2xl" aria-hidden="true">📝</span>
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-[#1E3A8A]">Síntesis Conceptual</span>
+            <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Resumen del Tema</h2>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-700 leading-relaxed">
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <h3 class="font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+              Complementariedad de la Arquitectura Híbrida
+            </h3>
+            <ul class="space-y-1.5 list-disc list-inside text-xs sm:text-sm">
+              <li><strong>RAID 1 (<code class="font-mono">/dev/md0</code>)</strong> replica bloques en espejo sobre 2 discos (<code class="font-mono">C = S</code>, 50 % útil), eliminando la penalización de paridad para bases de datos transaccionales y auditoría.</li>
+              <li><strong>RAID 5 (<code class="font-mono">/dev/md1</code>)</strong> distribuye datos y paridad XOR entre 3 discos (<code class="font-mono">C = (N−1)×S</code>, 66,7 % útil), maximizando capacidad para repositorios documentales e imágenes satelitales.</li>
+            </ul>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <h3 class="font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+              Dinámica de Bloques y Tolerancia a Fallos
+            </h3>
+            <ul class="space-y-1.5 list-disc list-inside text-xs sm:text-sm">
+              <li>Ambos niveles toleran el fallo de <strong>1 disco físico simultáneo</strong> operando en <strong>modo degradado</strong> (<code class="font-mono">[U_]</code> o <code class="font-mono">[U_U]</code>) sin interrumpir el acceso a los datos.</li>
+              <li>En RAID 5, la escritura sufre la <strong>penalización de escritura</strong> por el ciclo de lectura-modificación-escritura del bloque de paridad XOR.</li>
+            </ul>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <h3 class="font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#1E3A8A]"></span>
+              Persistencia Robusta en Ubuntu Server
+            </h3>
+            <ul class="space-y-1.5 list-disc list-inside text-xs sm:text-sm">
+              <li>Registrar los arrays en <code class="font-mono">/etc/mdadm/mdadm.conf</code> y ejecutar <code class="font-mono">sudo update-initramfs -u</code> evita el renombre automático a <code class="font-mono">/dev/md127</code> tras reiniciar.</li>
+              <li>El montaje en <code class="font-mono">/etc/fstab</code> debe emplear siempre el <code class="font-mono">UUID</code> del sistema de archivos (<code class="font-mono">blkid</code>) junto con <code class="font-mono">defaults,nofail</code>.</li>
+            </ul>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <h3 class="font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+              Auditoría e Integridad de Datos
+            </h3>
+            <ul class="space-y-1.5 list-disc list-inside text-xs sm:text-sm">
+              <li>El pseudofichero <code class="font-mono">/proc/mdstat</code> y <code class="font-mono">mdadm --detail</code> permiten auditar en tiempo real la salud y sincronización de cada miembro.</li>
+              <li>La diferencia entre capacidad teórica y <code class="font-mono">df -h</code> responde a los metadatos <code class="font-mono">mdadm</code>, inodos <code class="font-mono">ext4</code> y reserva del 5 % para <code class="font-mono">root</code>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN: 📖 GLOSARIO DE TÉRMINOS -->
+      <div class="textbook-card p-6 sm:p-7">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200">
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl" aria-hidden="true">📖</span>
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-[#1E3A8A]">Vocabulario Técnico de Referencia</span>
+              <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Glosario de Términos</h2>
+            </div>
+          </div>
+
+          <!-- Buscador rápido del glosario -->
+          <div class="w-full sm:w-72">
+            <label for="glossary-search" class="sr-only">Buscar término en el glosario</label>
+            <input
+              id="glossary-search"
+              type="search"
+              placeholder="Filtrar término (ej. XOR, nofail, initramfs)..."
+              class="w-full px-3.5 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:border-[#1E3A8A] focus:ring-2 focus:ring-blue-100"
+            />
+          </div>
+        </div>
+
+        <div id="glossary-grid" class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Renderizado dinámico por JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- PIE DE PÁGINA EDITORIAL -->
+  <footer class="bg-white border-t border-slate-200 mt-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+      <div>
+        <strong class="text-slate-700">Material de Apoyo Teórico · UT 3</strong> — Práctica de Laboratorio 1: Arquitectura Híbrida RAID 1 + RAID 5 (AgroDatos Andalucía S.L.)
+      </div>
+      <div class="flex items-center gap-4">
+        <button type="button" data-jump="vista4" class="text-[#1E3A8A] hover:underline font-semibold">
+          Ir a Resumen y Glosario
+        </button>
+        <span>·</span>
+        <span>Ubuntu Server LTS · <code class="font-mono">mdadm</code></span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- LÓGICA DE INTERACTIVIDAD, SIMULACIÓN Y CONTENIDO EDITORIAL -->
+  <script>
+    (function () {
+      'use strict';
+
+      // =========================================================================
+      // 1. ESTADO GLOBAL DE LA APLICACIÓN
+      // =========================================================================
+      const state = {
+        puesto: '07',
+        activeTab: 'vista1',
+        selectedArch: 'raid1',
+        activeLayer: '1',
+        selectedTokenIndex: 0,
+        termView: 'mdstat',
+        // Estado del simulador RAID 1 (/dev/md0) y RAID 5 (/dev/md1)
+        sim: {
+          r1Disks: [
+            { id: 'sdb', name: '/dev/sdb', role: 'spare/active [0]', healthy: true, blocks: ['A1', 'A2', 'B1'] },
+            { id: 'sdc', name: '/dev/sdc', role: 'spare/active [1]', healthy: true, blocks: ['A1', 'A2', 'B1'] }
+          ],
+          r5Disks: [
+            { id: 'sdd', name: '/dev/sdd', role: 'active [0]', healthy: true, blocks: [
+              { label: 'A1', isParity: false },
+              { label: 'B1', isParity: false },
+              { label: 'P_C', isParity: true }
+            ]},
+            { id: 'sde', name: '/dev/sde', role: 'active [1]', healthy: true, blocks: [
+              { label: 'A2', isParity: false },
+              { label: 'P_B', isParity: true },
+              { label: 'C1', isParity: false }
+            ]},
+            { id: 'sdf', name: '/dev/sdf', role: 'active [2]', healthy: true, blocks: [
+              { label: 'P_A', isParity: true },
+              { label: 'B2', isParity: false },
+              { label: 'C2', isParity: false }
+            ]}
+          ],
+          writeCounter: 0,
+          rebuilding: false,
+          rebuildProgress: 100,
+          rebuildTimer: null
+        }
+      };
+
+      // =========================================================================
+      // 2. DATOS EDITORIALES DE ARQUITECTURA (VISTA 1)
+      // =========================================================================
+      function getArchData(puesto) {
+        return {
+          system: {
+            badge: 'DISCO DEL SISTEMA · /dev/sda',
+            badgeClass: 'bg-[#0F172A] text-white',
+            borderTopClass: 'border-t-[#0F172A]',
+            title: 'Unidad Aislada del Sistema Operativo',
+            subtitle: 'Ubuntu Server 22.04 / 24.04 LTS · Partición raíz (/) y arranque GRUB',
+            workload: 'Aloja exclusivamente el kernel Linux, utilidades administrativas (mdadm, systemd), servicios base del servidor y registros del sistema operativo.',
+            ioReq: 'Operaciones estándar de arranque y carga de demonios del sistema. Separar el SO de los arrays de datos evita que la saturación de E/S de las aplicaciones afecte a la estabilidad del servidor.',
+            tolerance: 'Sin redundancia RAID en esta práctica. Si un volumen de datos fallara, el servidor sigue arrancando de forma independiente gracias al aislamiento físico y al parámetro nofail.',
+            capacity: 'Disco independiente del conjunto de 5 unidades virtuales añadidas (no participa en /dev/md0 ni en /dev/md1).',
+            justification: 'Buena práctica fundamental en administración de sistemas: desacoplar el almacenamiento del sistema operativo respecto a los volúmenes de datos de producción.'
+          },
+          raid1: {
+            badge: 'NIVEL 1 · RAID 1 (MIRRORING)',
+            badgeClass: 'bg-[#059669] text-white',
+            borderTopClass: 'border-t-[#059669]',
+            title: 'Matriz de Alta Disponibilidad (/dev/md0)',
+            subtitle: `Etiqueta CRITICO_${puesto} · Montaje /srv/agrodatos_critico_${puesto}`,
+            workload: 'Motor de base de datos transaccional de trazabilidad agrícola y registros de auditoría legal con escrituras continuas de baja latencia.',
+            ioReq: 'Alta tasa de operaciones de escritura aleatoria (IOPS) y latencia mínima. No tolera la penalización por cálculo de paridad de RAID 5.',
+            tolerance: 'Soporta el fallo completo de 1 de los 2 discos (/dev/sdb o /dev/sdc) operando en modo degradado [U_] sin pérdida de datos ni corte de servicio.',
+            capacity: 'Bruta: 4 GiB (2 × 2 GiB) → Útil Teórica: C = S = 2 GiB (Eficiencia del 50 %).',
+            justification: 'Prioriza velocidad de escritura directa y máxima simplicidad de recuperación ante desastres frente al coste por gigabyte.'
+          },
+          raid5: {
+            badge: 'NIVEL 2 · RAID 5 (PARIDAD DISTRIBUIDA)',
+            badgeClass: 'bg-[#4F46E5] text-white',
+            borderTopClass: 'border-t-[#4F46E5]',
+            title: 'Matriz de Almacenamiento Masivo (/dev/md1)',
+            subtitle: `Etiqueta DATOS_${puesto} · Montaje /srv/agrodatos_datos_${puesto}`,
+            workload: 'Repositorio departamental de imágenes satelitales multiespectrales, informes agronómicos técnicos y copias documentales de cooperativas.',
+            ioReq: 'Predominio de lecturas secuenciales de ficheros voluminosos y necesidad de maximizar el espacio útil disponible manteniendo redundancia.',
+            tolerance: 'Soporta el fallo de 1 de los 3 discos (/dev/sdd, /dev/sde o /dev/sdf) reconstruyendo los bloques perdidos mediante paridad XOR en modo [U_U].',
+            capacity: 'Bruta: 6 GiB (3 × 2 GiB) → Útil Teórica: C = (N − 1) × S = 4 GiB (Eficiencia del 66,7 %).',
+            justification: 'Optimiza el aprovechamiento del espacio (66,7 % frente al 50 % de RAID 1) asumiendo una leve penalización en escritura por el cálculo de paridad XOR.'
+          }
+        };
+      }
+
+      // =========================================================================
+      // 3. DATOS EDITORIALES DE LAS 5 CAPAS DE CONFIGURACIÓN (VISTA 3)
+      // =========================================================================
+      function getLayersData(puesto) {
+        return {
+          1: {
+            num: 'Capa 01',
+            title: 'Reconocimiento de Dispositivos de Bloque',
+            color: 'text-[#1E3A8A]',
+            summary: 'Antes de construir cualquier matriz RAID, el administrador debe auditar los dispositivos físicos/virtuales detectados por el kernel Linux, verificando que las 5 unidades nuevas carecen de particiones previas o firmas de sistemas de archivos residuales.',
+            why: 'Evita sobrescribir por error el disco del sistema (/dev/sda) y confirma que el controlador SATA/SCSI expone los 5 discos de 2 GB (/dev/sdb a /dev/sdf) limpios.',
+            tokens: [
+              {
+                code: 'lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT',
+                desc: 'Lista en árbol todos los dispositivos de bloque del kernel mostrando su tamaño, tipo (disk/part) y si contienen algún sistema de archivos (FSTYPE vacío indica disco limpio).'
+              },
+              {
+                code: 'sudo fdisk -l /dev/sd[b-f]',
+                desc: 'Inspecciona las tablas de particiones de las cinco unidades nuevas para confirmar que no poseen particiones MBR/GPT previas antes de entregarlas a mdadm.'
+              },
+              {
+                code: 'sudo apt update && sudo apt install -y mdadm kpartx',
+                desc: 'Instala el demonio y las herramientas de administración de matrices RAID por software (mdadm) en Ubuntu Server.'
+              }
+            ]
+          },
+          2: {
+            num: 'Capa 02',
+            title: 'Creación de Matrices RAID por Software (mdadm)',
+            color: 'text-emerald-700',
+            summary: 'El módulo md (Multiple Device) del kernel agrupa los dispositivos físicos en volúmenes lógicos de bloque (/dev/md0 y /dev/md1) escribiendo un superbloque de metadatos en cada disco miembro.',
+            why: 'Establece la geometría exacta de redundancia: espejo puro en /dev/md0 y paridad distribuida simétrica izquierda en /dev/md1.',
+            tokens: [
+              {
+                code: 'sudo mdadm --create /dev/md0 --level=1 --raid-devices=2 /dev/sdb /dev/sdc',
+                desc: 'Crea el dispositivo lógico /dev/md0 en modo espejo (--level=1) compuesto exactamente por 2 dispositivos activos (/dev/sdb y /dev/sdc).'
+              },
+              {
+                code: 'sudo mdadm --create /dev/md1 --level=5 --raid-devices=3 /dev/sdd /dev/sde /dev/sdf',
+                desc: 'Crea el dispositivo /dev/md1 con paridad distribuida (--level=5) sobre 3 unidades, iniciando automáticamente la sincronización inicial de paridad.'
+              },
+              {
+                code: 'cat /proc/mdstat',
+                desc: 'Consulta en tiempo real el pseudofichero del núcleo para verificar que la sincronización ha finalizado y que los indicadores muestran [UU] y [UUU].'
+              }
+            ]
+          },
+          3: {
+            num: 'Capa 03',
+            title: 'Formateo del Sistema de Archivos y Etiquetado',
+            color: 'text-indigo-700',
+            summary: 'Una vez sincronizados los volúmenes lógicos /dev/md0 y /dev/md1, el kernel los trata como discos estándar sobre los que debe crearse un sistema de archivos con registro transaccional (journaling) como ext4.',
+            why: 'Asigna etiquetas descriptivas vinculadas al puesto de trabajo (CRITICO_XX y DATOS_XX) y prepara la estructura de inodos para el montaje.',
+            tokens: [
+              {
+                code: `sudo mkfs.ext4 -L CRITICO_${puesto} /dev/md0`,
+                desc: `Formatea la matriz RAID 1 con ext4 y le asigna la etiqueta de volumen CRITICO_${puesto} mediante el parámetro -L para facilitar su identificación administrativa.`
+              },
+              {
+                code: `sudo mkfs.ext4 -L DATOS_${puesto} /dev/md1`,
+                desc: `Formatea la matriz RAID 5 con ext4 y etiqueta DATOS_${puesto}, reservando el superbloque, tablas de inodos y bloques de seguridad de root.`
+              },
+              {
+                code: `sudo mkdir -p /srv/agrodatos_critico_${puesto} /srv/agrodatos_datos_${puesto}`,
+                desc: 'Crea la jerarquía de directorios vacía bajo /srv (estándar FHS para datos de servicios alojados por el servidor) que actuará como puntos de montaje.'
+              }
+            ]
+          },
+          4: {
+            num: 'Capa 04',
+            title: 'Ensamblado Temprano en el Arranque (mdadm.conf + initramfs)',
+            color: 'text-amber-700',
+            summary: 'Si se reinicia el servidor sin guardar la definición de los arrays en la imagen inicial del kernel (initramfs), Linux autoensamblará las matrices asignándoles nombres genéricos impredecibles como /dev/md127.',
+            why: 'Garantiza que /dev/md0 y /dev/md1 conserven siempre su identidad exacta desde los primeros milisegundos del arranque del kernel.',
+            tokens: [
+              {
+                code: 'sudo mdadm --detail --scan | sudo tee -a /etc/mdadm/mdadm.conf',
+                desc: 'Escanea los arrays activos y exporta sus líneas ARRAY (con su metadato 1.2 y UUID del array mdadm) al fichero de configuración permanente.'
+              },
+              {
+                code: 'ARRAY /dev/md/0 metadata=1.2 UUID=8f4a21c9:7b104e2a:91d3f002:44b18e77',
+                desc: 'Ejemplo de línea registrada en mdadm.conf: vincula el nombre lógico del array con el UUID interno escrito en los superbloques de /dev/sdb y /dev/sdc.'
+              },
+              {
+                code: 'sudo update-initramfs -u',
+                desc: 'Regenera la imagen comprimida initramfs del kernel actual para incrustar el nuevo /etc/mdadm/mdadm.conf antes de montar el sistema de archivos raíz.'
+              }
+            ]
+          },
+          5: {
+            num: 'Capa 05',
+            title: 'Montaje Persistente Resiliente (/etc/fstab)',
+            color: 'text-teal-700',
+            summary: 'Finalmente, systemd debe montar automáticamente ambos volúmenes formateados en sus respectivos directorios de /srv durante cada inicio del sistema operativo, protegiendo el arranque frente a incidencias.',
+            why: 'El uso de UUID de sistema de archivos evita fallos si cambian los nombres de dispositivo, y la opción nofail impide bloqueos críticos en modo emergencia.',
+            tokens: [
+              {
+                code: 'sudo blkid /dev/md0 /dev/md1',
+                desc: 'Obtiene el UUID del sistema de archivos ext4 (distinto del UUID de mdadm) y confirma el tipo TYPE="ext4" de cada volumen lógico.'
+              },
+              {
+                code: `UUID=a1b2c3d4-e5f6-7890-abcd-ef1234567890  /srv/agrodatos_critico_${puesto}  ext4  defaults,nofail  0  2`,
+                desc: 'Entrada persistente en /etc/fstab: identifica el volumen por UUID de ext4, aplica opciones estándar más tolerancia a fallos (nofail) y programa chequeo fsck secundario (pass 2).'
+              },
+              {
+                code: 'sudo mount -a && lsblk -f',
+                desc: 'Valida inmediatamente que la sintaxis de /etc/fstab no contiene errores antes de ejecutar un reinicio completo (sudo reboot).'
+              }
+            ]
+          }
+        };
+      }
+
+      // =========================================================================
+      // 4. DATOS DEL GLOSARIO TÉCNICO (VISTA 4)
+      // =========================================================================
+      const glossaryTerms = [
+        {
+          term: 'Array RAID',
+          category: 'Arquitectura RAID',
+          definition: 'Conjunto redundante de discos independientes (Redundant Array of Independent Disks) que agrupa varias unidades físicas para presentarlas al sistema operativo como un único volumen lógico con mayor disponibilidad, rendimiento o capacidad.'
+        },
+        {
+          term: 'Mirroring (Espejo)',
+          category: 'Arquitectura RAID',
+          definition: 'Técnica empleada en RAID 1 consistente en replicar de forma exacta e idéntica cada bloque de datos en dos o más discos físicos. Ofrece latencia mínima de escritura y recuperación inmediata ante el fallo de una unidad.'
+        },
+        {
+          term: 'Striping (Entrelazado)',
+          category: 'Arquitectura RAID',
+          definition: 'Técnica de división secuencial de los datos en bloques de tamaño fijo (chunks) repartidos de forma alterna entre varios discos físicos, permitiendo operaciones de lectura y escritura paralelas.'
+        },
+        {
+          term: 'Paridad Distribuida (XOR)',
+          category: 'Arquitectura RAID',
+          definition: 'Mecanismo de redundancia utilizado en RAID 5 donde se calcula un bloque de control mediante la operación lógica OR Exclusivo (⊕) sobre los datos de una franja, rotando la ubicación de dicho bloque entre todos los discos del array.'
+        },
+        {
+          term: 'Write Penalty (Penalización de Escritura)',
+          category: 'Arquitectura RAID',
+          definition: 'Sobrecarga de operaciones de E/S que sufren los niveles RAID con paridad (como RAID 5) al modificar bloques pequeños: el controlador debe leer el dato antiguo y la paridad antigua, recalcular el nuevo XOR y escribir ambos bloques (4 operaciones de E/S).'
+        },
+        {
+          term: 'Modo Degradado (Degraded)',
+          category: 'Arquitectura RAID',
+          definition: 'Estado operativo en el que un array RAID continúa funcionando sin pérdida de datos tras la avería o desconexión de un disco miembro ([U_] en RAID 1 o [U_U] en RAID 5), reconstruyendo al vuelo la información faltante hasta que se sustituya la unidad.'
+        },
+        {
+          term: 'Superbloque mdadm',
+          category: 'Sistema Linux',
+          definition: 'Estructura de metadatos (habitualmente versión 1.2) grabada por mdadm en cada disco perteneciente a un array RAID por software. Almacena el UUID del array, el nivel RAID, el número de dispositivos y el estado de sincronización.'
+        },
+        {
+          term: 'initramfs',
+          category: 'Sistema Linux',
+          definition: 'Sistema de archivos temporal cargado en memoria RAM durante las primeras fases de arranque del kernel Linux. Contiene los módulos del controlador RAID y una copia de /etc/mdadm/mdadm.conf para ensamblar los arrays antes de montar el sistema.'
+        },
+        {
+          term: 'UUID de Sistema de Archivos',
+          category: 'Sistema Linux',
+          definition: 'Identificador único universal de 128 bits generado al formatear un volumen (por ejemplo con mkfs.ext4) y consultable mediante blkid. Se utiliza en /etc/fstab para montar volúmenes con independencia del orden de detección de discos.'
+        },
+        {
+          term: 'Parámetro nofail',
+          category: 'Sistema Linux',
+          definition: 'Opción de montaje en /etc/fstab que instruye a systemd para no detener el proceso de arranque del servidor ni caer en modo de emergencia si un dispositivo de almacenamiento secundario no está disponible en el inicio.'
+        }
+      ];
+
+      // =========================================================================
+      // 5. FUNCIONES DE RENDERIZADO Y ACTUALIZACIÓN DE INTERFAZ
+      // =========================================================================
+
+      // Actualiza todas las etiquetas dinámicas con el número de puesto (XX)
+      function syncPuestoLabels() {
+        document.querySelectorAll('.puesto-span').forEach(el => {
+          el.textContent = state.puesto;
+        });
+        renderArchInspector();
+        renderLayerDetail();
+        renderSimulator();
+      }
+
+      // Renderiza el panel lateral de la Vista 1 (Arquitectura)
+      function renderArchInspector() {
+        const container = document.getElementById('arch-inspector');
+        if (!container) return;
+        const data = getArchData(state.puesto)[state.selectedArch];
+
+        // Actualizar bordes activos de las tarjetas del diagrama
+        document.querySelectorAll('.arch-node').forEach(btn => {
+          const isSelected = btn.getAttribute('data-arch') === state.selectedArch;
+          btn.classList.remove('ring-2', 'ring-emerald-500/30', 'ring-indigo-500/30', 'ring-slate-500/30', 'shadow-md');
+          if (isSelected) {
+            btn.classList.add('shadow-md', 'ring-2');
+            if (state.selectedArch === 'raid1') btn.classList.add('ring-emerald-500/30');
+            else if (state.selectedArch === 'raid5') btn.classList.add('ring-indigo-500/30');
+            else btn.classList.add('ring-slate-500/30');
+          }
+        });
+
+        container.className = `lg:col-span-5 textbook-card p-5 sm:p-6 border-t-4 ${data.borderTopClass}`;
+        container.innerHTML = `
+          <div class="mb-4 pb-3 border-b border-slate-100">
+            <span class="inline-block px-2.5 py-0.5 rounded font-mono text-xs font-bold ${data.badgeClass} mb-2">
+              ${data.badge}
+            </span>
+            <h3 class="text-lg sm:text-xl font-bold text-slate-900">${data.title}</h3>
+            <p class="font-mono text-xs text-slate-500 mt-1">${data.subtitle}</p>
+          </div>
+
+          <div class="space-y-4 text-xs sm:text-sm">
+            <div>
+              <h4 class="font-bold text-slate-900 uppercase tracking-wider text-[11px] mb-1">Carga de Trabajo Alojada</h4>
+              <p class="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200/80">${data.workload}</p>
+            </div>
+
+            <div>
+              <h4 class="font-bold text-slate-900 uppercase tracking-wider text-[11px] mb-1">Requisitos de Entrada/Salida (E/S)</h4>
+              <p class="text-slate-600 leading-relaxed">${data.ioReq}</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3">
+              <div class="p-3 rounded-lg bg-blue-50/60 border border-blue-100">
+                <h4 class="font-bold text-[#1E3A8A] text-xs mb-0.5">Tolerancia a Fallos y Disponibilidad</h4>
+                <p class="text-slate-700 text-xs leading-relaxed">${data.tolerance}</p>
+              </div>
+              <div class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <h4 class="font-bold text-slate-900 text-xs mb-0.5">Dimensionamiento de Capacidad</h4>
+                <p class="text-slate-700 font-mono text-xs leading-relaxed">${data.capacity}</p>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100">
+              <h4 class="font-bold text-slate-900 uppercase tracking-wider text-[11px] mb-1">Justificación Arquitectónica</h4>
+              <p class="text-slate-600 italic leading-relaxed">${data.justification}</p>
+            </div>
+          </div>
+        `;
+      }
+
+      // =========================================================================
+      // 6. LÓGICA DEL SIMULADOR INTERACTIVO RAID 1 VS RAID 5 (VISTA 2)
+      // =========================================================================
+      function setSimBanner(type, icon, title, desc, badgeText) {
+        const banner = document.getElementById('sim-status-banner');
+        const iconEl = document.getElementById('sim-status-icon');
+        const titleEl = document.getElementById('sim-status-title');
+        const descEl = document.getElementById('sim-status-desc');
+        const badgeEl = document.getElementById('sim-io-badge');
+
+        const styles = {
+          info: 'bg-blue-50 border-blue-200 text-slate-800',
+          write: 'bg-indigo-50 border-indigo-200 text-slate-800',
+          read: 'bg-emerald-50 border-emerald-200 text-slate-800',
+          degraded: 'bg-amber-50 border-amber-300 text-amber-950',
+          critical: 'bg-rose-50 border-rose-300 text-rose-950'
+        };
+
+        banner.className = `rounded-xl p-4 border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${styles[type] || styles.info}`;
+        iconEl.textContent = icon;
+        titleEl.textContent = title;
+        descEl.textContent = desc;
+        badgeEl.textContent = badgeText;
+      }
+
+      function renderSimulator(animateType = null) {
+        const r1Grid = document.getElementById('r1-disks-grid');
+        const r5Grid = document.getElementById('r5-disks-grid');
+        const r1Pill = document.getElementById('r1-state-pill');
+        const r5Pill = document.getElementById('r5-state-pill');
+
+        const r1HealthyCount = state.sim.r1Disks.filter(d => d.healthy).length;
+        const r5HealthyCount = state.sim.r5Disks.filter(d => d.healthy).length;
+
+        // Actualizar etiquetas de estado de RAID 1
+        if (r1HealthyCount === 2) {
+          r1Pill.className = 'font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300';
+          r1Pill.textContent = state.sim.rebuilding ? `recovering ${state.sim.rebuildProgress}% [UU]` : 'clean [UU]';
+        } else if (r1HealthyCount === 1) {
+          r1Pill.className = 'font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300';
+          const mask = state.sim.r1Disks.map(d => (d.healthy ? 'U' : '_')).join('');
+          r1Pill.textContent = `degraded [${mask}]`;
+        } else {
+          r1Pill.className = 'font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-rose-100 text-rose-900 border border-rose-300';
+          r1Pill.textContent = 'OFFLINE [__]';
+        }
+
+        // Actualizar etiquetas de estado de RAID 5
+        if (r5HealthyCount === 3) {
+          r5Pill.className = 'font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-300';
+          r5Pill.textContent = state.sim.rebuilding ? `recovering ${state.sim.rebuildProgress}% [UUU]` : 'clean [UUU]';
+        } else if (r5HealthyCount === 2) {
+          r5Pill.className = 'font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300';
+          const mask = state.sim.r5Disks.map(d => (d.healthy ? 'U' : '_')).join('');
+          r5Pill.textContent = `degraded [${mask}]`;
+        } else {
+          r5Pill.className = 'font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-rose-100 text-rose-900 border border-rose-300';
+          const mask = state.sim.r5Disks.map(d => (d.healthy ? 'U' : '_')).join('');
+          r5Pill.textContent = `FAILED [${mask}]`;
+        }
+
+        // Renderizar discos físicos RAID 1
+        r1Grid.innerHTML = state.sim.r1Disks.map((disk, idx) => {
+          const isFailed = !disk.healthy;
+          const cardBorder = isFailed
+            ? 'border-rose-400 bg-rose-50/70'
+            : animateType === 'read'
+              ? 'border-emerald-500 bg-emerald-50/40 read-glow'
+              : 'border-slate-200 bg-slate-50';
+
+          const blocksHtml = disk.blocks.slice(-4).map((blk, bIdx) => {
+            const animClass = animateType === 'write' && bIdx === disk.blocks.slice(-4).length - 1 ? 'block-pulse' : '';
+            if (isFailed) {
+              return `<div class="px-2 py-1.5 rounded bg-rose-100 border border-rose-300 text-rose-800 font-mono text-xs text-center line-through opacity-75">${blk} (Inaccesible)</div>`;
+            }
+            return `<div class="${animClass} px-2 py-1.5 rounded bg-emerald-600 text-white font-mono text-xs font-semibold text-center shadow-sm">Bloque ${blk}</div>`;
+          }).join('');
+
+          return `
+            <div
+              data-toggle-disk="r1-${idx}"
+              role="button"
+              tabindex="0"
+              title="Haz clic para alternar fallo/conexión de ${disk.name}"
+              class="cursor-pointer rounded-xl border-2 p-3 transition-all hover:shadow-md ${cardBorder}"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-mono text-xs font-bold text-slate-900">${disk.name}</span>
+                <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${isFailed ? 'bg-rose-600 text-white' : 'bg-emerald-100 text-emerald-800'}">
+                  ${isFailed ? 'FALLO (F)' : 'ACTIVO (U)'}
+                </span>
+              </div>
+              <div class="text-[11px] text-slate-500 mb-2">2 GB · Espejo [${idx}]</div>
+              <div class="space-y-1.5">
+                ${blocksHtml}
+              </div>
+              <div class="mt-2.5 pt-2 border-t border-slate-200/80 text-[10px] text-center font-medium text-slate-500">
+                Clic para ${isFailed ? 'reemplazar disco' : 'simular avería'}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Renderizar discos físicos RAID 5
+        r5Grid.innerHTML = state.sim.r5Disks.map((disk, idx) => {
+          const isFailed = !disk.healthy;
+          const cardBorder = isFailed
+            ? 'border-rose-400 bg-rose-50/70'
+            : animateType === 'read'
+              ? 'border-indigo-500 bg-indigo-50/40 read-glow'
+              : 'border-slate-200 bg-slate-50';
+
+          const blocksHtml = disk.blocks.slice(-4).map((blk, bIdx) => {
+            const isLast = bIdx === disk.blocks.slice(-4).length - 1;
+            const animClass = animateType === 'write' && isLast ? (blk.isParity ? 'block-pulse xor-flash' : 'block-pulse') : '';
+
+            if (isFailed) {
+              const canReconstruct = r5HealthyCount === 2;
+              return `
+                <div class="px-1.5 py-1.5 rounded bg-rose-100 border border-rose-300 text-rose-900 font-mono text-[11px] text-center">
+                  <span class="line-through">${blk.label}</span>
+                  ${canReconstruct ? '<span class="block text-[9px] font-bold text-amber-800">XOR al vuelo</span>' : ''}
+                </div>
+              `;
+            }
+
+            if (blk.isParity) {
+              return `<div class="${animClass} px-1.5 py-1.5 rounded bg-amber-100 border border-amber-300 text-amber-950 font-mono text-[11px] font-bold text-center">Paridad ${blk.label}</div>`;
+            }
+            return `<div class="${animClass} px-1.5 py-1.5 rounded bg-[#4F46E5] text-white font-mono text-[11px] font-semibold text-center shadow-sm">Dato ${blk.label}</div>`;
+          }).join('');
+
+          return `
+            <div
+              data-toggle-disk="r5-${idx}"
+              role="button"
+              tabindex="0"
+              title="Haz clic para alternar fallo/conexión de ${disk.name}"
+              class="cursor-pointer rounded-xl border-2 p-2.5 transition-all hover:shadow-md ${cardBorder}"
+            >
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1.5">
+                <span class="font-mono text-xs font-bold text-slate-900">${disk.name}</span>
+                <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded self-start ${isFailed ? 'bg-rose-600 text-white' : 'bg-indigo-100 text-indigo-800'}">
+                  ${isFailed ? 'FALLO' : 'OK (U)'}
+                </span>
+              </div>
+              <div class="text-[10px] text-slate-500 mb-2">2 GB · Miembro [${idx}]</div>
+              <div class="space-y-1.5">
+                ${blocksHtml}
+              </div>
+              <div class="mt-2 pt-1.5 border-t border-slate-200/80 text-[10px] text-center font-medium text-slate-500">
+                Clic: ${isFailed ? 'reparar' : 'averiar'}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        renderLiveTerminal();
+      }
+
+      // Renderiza la consola en vivo (/proc/mdstat o mdadm --detail)
+      function renderLiveTerminal() {
+        const termEl = document.getElementById('live-terminal-output');
+        if (!termEl) return;
+
+        const r1Healthy = state.sim.r1Disks.filter(d => d.healthy).length;
+        const r5Healthy = state.sim.r5Disks.filter(d => d.healthy).length;
+
+        const r1Mask = state.sim.r1Disks.map(d => (d.healthy ? 'U' : '_')).join('');
+        const r5Mask = state.sim.r5Disks.map(d => (d.healthy ? 'U' : '_')).join('');
+
+        const r1DevsStr = state.sim.r1Disks
+          .map((d, i) => `${d.id}[${i}]${d.healthy ? '' : '(F)'}`)
+          .reverse()
+          .join(' ');
+        const r5DevsStr = state.sim.r5Disks
+          .map((d, i) => `${d.id}[${i}]${d.healthy ? '' : '(F)'}`)
+          .reverse()
+          .join(' ');
+
+        if (state.termView === 'mdstat') {
+          const recoveryLine = state.sim.rebuilding
+            ? `\n      [==========>..........]  recovery = ${state.sim.rebuildProgress}.0% (1048576/2097152) finish=0.1min speed=174762K/sec`
+            : '';
+
+          termEl.textContent =
+`tecnico@agrodatos-srv${state.puesto}:~$ cat /proc/mdstat
+Personalities : [raid1] [raid5] [raid6] [raid4] [linear] [multipath]
+md1 : ${r5Healthy >= 2 ? 'active' : 'inactive'} raid5 ${r5DevsStr}
+      4190208 blocks super 1.2 level 5, 512k chunk, algorithm 2 [3/${r5Healthy}] [${r5Mask}]${recoveryLine}
+      bitmap: 0/1 pages [0KB], 65536KB chunk
+
+md0 : ${r1Healthy >= 1 ? 'active' : 'inactive'} raid1 ${r1DevsStr}
+      2095104 blocks super 1.2 [2/${r1Healthy}] [${r1Mask}]
+      bitmap: 0/1 pages [0KB], 65536KB chunk
+
+unused devices: <none>`;
+        } else if (state.termView === 'detail0') {
+          const stateStr = r1Healthy === 2 ? 'clean' : r1Healthy === 1 ? 'clean, degraded' : 'FAILED';
+          termEl.textContent =
+`tecnico@agrodatos-srv${state.puesto}:~$ sudo mdadm --detail /dev/md0
+/dev/md0:
+           Version : 1.2
+     Creation Time : Mon Nov 16 10:15:22 2026
+        Raid Level : raid1
+        Array Size : 2095104 (2046.00 MiB 2145.39 MB)
+     Used Dev Size : 2095104 (2046.00 MiB 2145.39 MB)
+      Raid Devices : 2
+     Total Devices : 2
+       Persistence : Superblock is persistent
+
+             State : ${stateStr}
+    Active Devices : ${r1Healthy}
+   Working Devices : ${r1Healthy}
+    Failed Devices : ${2 - r1Healthy}
+
+              Name : agrodatos-srv${state.puesto}:0  (local to host agrodatos-srv${state.puesto})
+              UUID : 8f4a21c9:7b104e2a:91d3f002:44b18e77
+            Events : ${18 + state.sim.writeCounter}
+
+    Number   Major   Minor   RaidDevice State
+       0       8       16        0      ${state.sim.r1Disks[0].healthy ? 'active sync   /dev/sdb' : 'faulty        /dev/sdb'}
+       1       8       32        1      ${state.sim.r1Disks[1].healthy ? 'active sync   /dev/sdc' : 'faulty        /dev/sdc'}`;
+        } else {
+          const stateStr = r5Healthy === 3 ? 'clean' : r5Healthy === 2 ? 'clean, degraded' : 'FAILED';
+          termEl.textContent =
+`tecnico@agrodatos-srv${state.puesto}:~$ sudo mdadm --detail /dev/md1
+/dev/md1:
+           Version : 1.2
+     Creation Time : Mon Nov 16 10:18:04 2026
+        Raid Level : raid5
+        Array Size : 4190208 (4092.00 MiB 4290.77 MB)
+     Used Dev Size : 2095104 (2046.00 MiB 2145.39 MB)
+      Raid Devices : 3
+     Total Devices : 3
+       Persistence : Superblock is persistent
+
+             State : ${stateStr}
+    Active Devices : ${r5Healthy}
+   Working Devices : ${r5Healthy}
+    Failed Devices : ${3 - r5Healthy}
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+              Name : agrodatos-srv${state.puesto}:1  (local to host agrodatos-srv${state.puesto})
+              UUID : 3c91d402:55a8b19e:027f11c4:99e20a15
+            Events : ${24 + state.sim.writeCounter}
+
+    Number   Major   Minor   RaidDevice State
+       0       8       48        0      ${state.sim.r5Disks[0].healthy ? 'active sync   /dev/sdd' : 'faulty        /dev/sdd'}
+       1       8       64        1      ${state.sim.r5Disks[1].healthy ? 'active sync   /dev/sde' : 'faulty        /dev/sde'}
+       2       8       80        2      ${state.sim.r5Disks[2].healthy ? 'active sync   /dev/sdf' : 'faulty        /dev/sdf'}`;
+        }
+      }
+
+      // Acciones de botones del simulador
+      function simulateWrite() {
+        const r1Healthy = state.sim.r1Disks.filter(d => d.healthy).length;
+        const r5Healthy = state.sim.r5Disks.filter(d => d.healthy).length;
+
+        if (r1Healthy === 0 && r5Healthy < 2) {
+          setSimBanner(
+            'critical',
+            '🛑',
+            'Escritura imposible: Ambos arrays han superado su umbral de tolerancia a fallos',
+            'Pulsa "Reconstruir Array (Rebuild)" o haz clic sobre los discos dañados para restaurar la redundancia.',
+            'E/S BLOQUEADA'
+          );
+          return;
+        }
+
+        state.sim.writeCounter++;
+        const letters = ['D', 'E', 'F', 'G', 'H', 'J'];
+        const ch = letters[(state.sim.writeCounter - 1) % letters.length];
+
+        // Añadir bloques en espejo en RAID 1
+        state.sim.r1Disks.forEach(d => {
+          if (d.healthy) d.blocks.push(`${ch}1`);
+        });
+
+        // Añadir franja con paridad rotativa en RAID 5
+        const paritySlot = state.sim.writeCounter % 3;
+        let dataIdx = 1;
+        state.sim.r5Disks.forEach((d, idx) => {
+          if (idx === paritySlot) {
+            d.blocks.push({ label: `P_${ch}`, isParity: true });
+          } else {
+            d.blocks.push({ label: `${ch}${dataIdx}`, isParity: false });
+            dataIdx++;
+          }
+        });
+
+        setSimBanner(
+          'write',
+          '✍️',
+          `Escritura de Franja "${ch}" Completada: Espejo Directo vs. Paridad Rotativa XOR`,
+          `RAID 1 replicó ${ch}1 directamente en ambos discos sin cálculo previo. RAID 5 dividió ${ch}1 y ${ch}2, calculó la paridad P_${ch} = ${ch}1 ⊕ ${ch}2 y la escribió rotativamente en ${state.sim.r5Disks[paritySlot].name}.`,
+          'WRITE PENALTY: RAID 1 (1x) vs RAID 5 (XOR)'
+        );
+        renderSimulator('write');
+      }
+
+      function simulateRead() {
+        setSimBanner(
+          'read',
+          '⚡',
+          'Lectura Paralela Multi-Disco Activa en /dev/md0 y /dev/md1',
+          'El planificador de bloques del kernel lee simultáneamente diferentes bloques desde todos los discos activos disponibles, multiplicando el caudal de lectura secuencial.',
+          'LECTURA PARALELA: ACTIVA'
+        );
+        renderSimulator('read');
+      }
+
+      function simulateDiskFailure() {
+        // Si todos están sanos, averiamos /dev/sdc en RAID 1 y /dev/sde en RAID 5 para mostrar ambos modos degradados
+        const r1AllOk = state.sim.r1Disks.every(d => d.healthy);
+        const r5AllOk = state.sim.r5Disks.every(d => d.healthy);
+
+        if (r1AllOk && r5AllOk) {
+          state.sim.r1Disks[1].healthy = false; // /dev/sdc
+          state.sim.r5Disks[1].healthy = false; // /dev/sde
+          setSimBanner(
+            'degraded',
+            '⚠️',
+            'Modo Degradado Activado ([U_] en RAID 1 y [U_U] en RAID 5) — Sin Pérdida de Datos',
+            'Se ha simulado el fallo simultáneo de /dev/sdc y /dev/sde. RAID 1 sirve datos desde el espejo /dev/sdb; RAID 5 reconstruye en tiempo real los bloques perdidos mediante XOR (ej. A2 = A1 ⊕ P_A).',
+            'ESTADO: DEGRADED (TOLERADO)'
+          );
+        } else {
+          // Si ya había un fallo, mostramos advertencia de segundo fallo crítico si se pulsa de nuevo
+          if (state.sim.r5Disks[1].healthy === false && state.sim.r5Disks[2].healthy === true) {
+            state.sim.r5Disks[2].healthy = false;
+            setSimBanner(
+              'critical',
+              '🚨',
+              '¡Fallo Múltiple en RAID 5 ([U__])! Umbral de Tolerancia Superado',
+              'Al fallar un segundo disco (/dev/sdf) antes de reconstruir el primero (/dev/sde), la ecuación XOR queda con dos incógnitas y el volumen /dev/md1 pasa a estado inoperativo.',
+              'FALLO CRÍTICO: >1 DISCO'
+            );
+          } else {
+            setSimBanner(
+              'degraded',
+              '⚠️',
+              'Arrays en Modo Degradado: Ejecuta "Reconstruir Array (Rebuild)" para restaurar la redundancia',
+              'Mientras permanezca degradado, el sistema opera sin margen de seguridad ante una segunda avería física.',
+              'MODO DEGRADADO'
+            );
+          }
+        }
+        renderSimulator();
+      }
+
+      function simulateRebuild() {
+        const needsRebuild =
+          state.sim.r1Disks.some(d => !d.healthy) || state.sim.r5Disks.some(d => !d.healthy);
+
+        if (!needsRebuild) {
+          setSimBanner(
+            'info',
+            '✅',
+            'Todos los discos miembros están sincronizados ([UU] y [UUU])',
+            'No hay unidades dañadas pendientes de resincronización en este momento.',
+            'ESTADO: CLEAN'
+          );
+          return;
+        }
+
+        if (state.sim.rebuildTimer) clearInterval(state.sim.rebuildTimer);
+
+        // Restaurar discos físicos (simula inserción de disco nuevo) e iniciar progreso
+        state.sim.r1Disks.forEach(d => (d.healthy = true));
+        state.sim.r5Disks.forEach(d => (d.healthy = true));
+        state.sim.rebuilding = true;
+        state.sim.rebuildProgress = 25;
+
+        setSimBanner(
+          'write',
+          '🔄',
+          'Resincronizando Matrices (Rebuild en progreso)...',
+          'mdadm está copiando los bloques espejo en /dev/md0 y recalculando las franjas de paridad XOR en /dev/md1 en segundo plano sin detener el servicio.',
+          'RECOVERY: 25%'
+        );
+        renderSimulator();
+
+        state.sim.rebuildTimer = setInterval(() => {
+          state.sim.rebuildProgress += 25;
+          if (state.sim.rebuildProgress >= 100) {
+            clearInterval(state.sim.rebuildTimer);
+            state.sim.rebuildTimer = null;
+            state.sim.rebuilding = false;
+            state.sim.rebuildProgress = 100;
+            setSimBanner(
+              'read',
+              '✅',
+              'Reconstrucción Completada al 100 %: Redundancia Restaurada ([UU] y [UUU])',
+              'Ambos arrays han vuelto a estado limpio (clean) con todos sus miembros activos y sincronizados.',
+              'ESTADO: CLEAN [UU] / [UUU]'
+            );
+          } else {
+            setSimBanner(
+              'write',
+              '🔄',
+              `Resincronizando Matrices (Rebuild en progreso: ${state.sim.rebuildProgress} %)...`,
+              'Observa en /proc/mdstat la barra de progreso de recuperación en tiempo real.',
+              `RECOVERY: ${state.sim.rebuildProgress}%`
+            );
+          }
+          renderSimulator();
+        }, 650);
+      }
+
+      function resetSimulator() {
+        if (state.sim.rebuildTimer) clearInterval(state.sim.rebuildTimer);
+        state.sim.r1Disks = [
+          { id: 'sdb', name: '/dev/sdb', role: 'active [0]', healthy: true, blocks: ['A1', 'A2', 'B1'] },
+          { id: 'sdc', name: '/dev/sdc', role: 'active [1]', healthy: true, blocks: ['A1', 'A2', 'B1'] }
+        ];
+        state.sim.r5Disks = [
+          { id: 'sdd', name: '/dev/sdd', role: 'active [0]', healthy: true, blocks: [
+            { label: 'A1', isParity: false },
+            { label: 'B1', isParity: false },
+            { label: 'P_C', isParity: true }
+          ]},
+          { id: 'sde', name: '/dev/sde', role: 'active [1]', healthy: true, blocks: [
+            { label: 'A2', isParity: false },
+            { label: 'P_B', isParity: true },
+            { label: 'C1', isParity: false }
+          ]},
+          { id: 'sdf', name: '/dev/sdf', role: 'active [2]', healthy: true, blocks: [
+            { label: 'P_A', isParity: true },
+            { label: 'B2', isParity: false },
+            { label: 'C2', isParity: false }
+          ]}
+        ];
+        state.sim.writeCounter = 0;
+        state.sim.rebuilding = false;
+        state.sim.rebuildProgress = 100;
+        setSimBanner(
+          'info',
+          'ℹ️',
+          'Estado Nominal Activo: Ambos arrays sincronizados ([UU] y [UUU])',
+          'Pulsa cualquiera de los botones superiores para observar el flujo de bloques, el cálculo de paridad XOR o el comportamiento ante el fallo de un disco.',
+          'Estado: CLEAN'
+        );
+        renderSimulator();
+      }
+
+      // =========================================================================
+      // 7. RENDERIZADO DE LAS 5 CAPAS DE CONFIGURACIÓN (VISTA 3)
+      // =========================================================================
+      function renderLayerDetail() {
+        const container = document.getElementById('layer-detail-container');
+        if (!container) return;
+
+        const layer = getLayersData(state.puesto)[state.activeLayer];
+        const tokenObj = layer.tokens[state.selectedTokenIndex] || layer.tokens[0];
+
+        // Actualizar estilos de botones de capas
+        document.querySelectorAll('.layer-btn').forEach(btn => {
+          const isCurrent = btn.getAttribute('data-layer') === String(state.activeLayer);
+          if (isCurrent) {
+            btn.className = 'layer-btn text-left p-3.5 rounded-xl border-2 border-[#1E3A8A] bg-blue-50/70 shadow-sm transition-all';
+          } else {
+            btn.className = 'layer-btn text-left p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-400 transition-all';
+          }
+        });
+
+        const tokensHtml = layer.tokens
+          .map((t, i) => {
+            const activeClass = i === state.selectedTokenIndex ? 'selected-token bg-[#1E3A8A] text-white' : 'text-emerald-300';
+            return `
+              <div class="py-1.5">
+                <span class="text-slate-500 select-none mr-2">$</span>
+                <code
+                  data-token-idx="${i}"
+                  role="button"
+                  tabindex="0"
+                  class="code-token font-mono text-xs sm:text-sm ${activeClass}"
+                >${t.code}</code>
+              </div>
+            `;
+          })
+          .join('');
+
+        container.innerHTML = `
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div class="lg:col-span-5 space-y-3">
+              <span class="font-mono text-xs font-bold uppercase tracking-wider ${layer.color}">${layer.num}</span>
+              <h3 class="text-lg sm:text-xl font-bold text-slate-900">${layer.title}</h3>
+              <p class="text-sm text-slate-700 leading-relaxed">${layer.summary}</p>
+              <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 leading-relaxed">
+                <strong class="text-slate-900 block mb-1">Importancia en el flujo de almacenamiento:</strong>
+                ${layer.why}
+              </div>
+            </div>
+
+            <div class="lg:col-span-7 space-y-3">
+              <div class="rounded-xl bg-[#0F172A] p-4 border border-slate-800">
+                <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 pb-2 mb-2 border-b border-slate-800">
+                  <span>Comandos y Configuración · Haz clic en una línea para inspeccionar</span>
+                  <span class="text-amber-300">Puesto ${state.puesto}</span>
+                </div>
+                <div class="overflow-x-auto">
+                  ${tokensHtml}
+                </div>
+              </div>
+
+              <!-- Cuadro explicativo del parámetro seleccionado -->
+              <div class="p-4 rounded-xl bg-blue-50/70 border border-blue-200">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-[#1E3A8A] mb-1">
+                  Anatomía de la instrucción seleccionada
+                </div>
+                <div class="font-mono text-xs text-slate-900 bg-white px-2.5 py-1.5 rounded border border-blue-100 mb-2 overflow-x-auto">
+                  ${tokenObj.code}
+                </div>
+                <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                  ${tokenObj.desc}
+                </p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // =========================================================================
+      // 8. RENDERIZADO DEL GLOSARIO TÉCNICO (VISTA 4)
+      // =========================================================================
+      function renderGlossary(filterText = '') {
+        const grid = document.getElementById('glossary-grid');
+        if (!grid) return;
+
+        const q = filterText.trim().toLowerCase();
+        const filtered = glossaryTerms.filter(item =>
+          item.term.toLowerCase().includes(q) ||
+          item.definition.toLowerCase().includes(q) ||
+          item.category.toLowerCase().includes(q)
+        );
+
+        if (filtered.length === 0) {
+          grid.innerHTML = `
+            <div class="col-span-full p-6 text-center text-sm text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+              No se encontraron términos que coincidan con "<strong>${filterText}</strong>".
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = filtered.map(item => {
+          const badgeStyle = item.category === 'Arquitectura RAID'
+            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+            : 'bg-indigo-50 text-indigo-800 border-indigo-200';
+          return `
+            <article class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:shadow-sm transition-all">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <h3 class="font-bold text-slate-900 text-sm sm:text-base">${item.term}</h3>
+                <span class="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badgeStyle}">
+                  ${item.category}
+                </span>
+              </div>
+              <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                ${item.definition}
+              </p>
+            </article>
+          `;
+        }).join('');
+      }
+
+      // =========================================================================
+      // 9. GESTIÓN DE PESTAÑAS Y EVENTOS DE USUARIO
+      // =========================================================================
+      function switchTab(tabId) {
+        state.activeTab = tabId;
+        document.querySelectorAll('.tab-panel').forEach(panel => {
+          panel.classList.toggle('hidden', panel.id !== tabId);
+        });
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+          const isMatch = btn.getAttribute('data-tab') === tabId;
+          btn.setAttribute('aria-selected', String(isMatch));
+          if (isMatch) {
+            btn.className = 'tab-btn active px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-slate-200 flex items-center gap-2';
+          } else {
+            btn.className = 'tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center gap-2';
+          }
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // Navegación principal por pestañas
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+          btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+        });
+
+        // Enlace rápido del footer
+        document.querySelectorAll('[data-jump]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            switchTab(btn.getAttribute('data-jump'));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        });
+
+        // Selector de número de puesto (XX)
+        const puestoInput = document.getElementById('puesto-input');
+        if (puestoInput) {
+          puestoInput.addEventListener('input', (e) => {
+            const clean = e.target.value.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+            state.puesto = clean || 'XX';
+            syncPuestoLabels();
+          });
+        }
+
+        // Vista 1: Selección de nodo arquitectónico
+        document.querySelectorAll('.arch-node').forEach(node => {
+          node.addEventListener('click', () => {
+            state.selectedArch = node.getAttribute('data-arch');
+            renderArchInspector();
+          });
+        });
+
+        // Vista 2: Botones del simulador
+        document.getElementById('btn-sim-write')?.addEventListener('click', simulateWrite);
+        document.getElementById('btn-sim-read')?.addEventListener('click', simulateRead);
+        document.getElementById('btn-sim-fail')?.addEventListener('click', simulateDiskFailure);
+        document.getElementById('btn-sim-rebuild')?.addEventListener('click', simulateRebuild);
+        document.getElementById('btn-sim-reset')?.addEventListener('click', resetSimulator);
+
+        // Vista 2: Clic directo sobre discos físicos para alternar fallo/conexión
+        document.getElementById('vista2')?.addEventListener('click', (e) => {
+          const diskCard = e.target.closest('[data-toggle-disk]');
+          if (!diskCard) return;
+          const [arr, idxStr] = diskCard.getAttribute('data-toggle-disk').split('-');
+          const idx = parseInt(idxStr, 10);
+          const targetDisk = arr === 'r1' ? state.sim.r1Disks[idx] : state.sim.r5Disks[idx];
+          if (!targetDisk) return;
+
+          targetDisk.healthy = !targetDisk.healthy;
+
+          const r1Ok = state.sim.r1Disks.filter(d => d.healthy).length;
+          const r5Ok = state.sim.r5Disks.filter(d => d.healthy).length;
+
+          if (r1Ok === 0 || r5Ok < 2) {
+            setSimBanner(
+              'critical',
+              '🚨',
+              `Umbral de Redundancia Superado en ${arr === 'r1' ? '/dev/md0 (RAID 1)' : '/dev/md1 (RAID 5)'}`,
+              'Se han desconectado demasiados discos simultáneamente en el mismo array. Haz clic en los discos dañados o pulsa "Reconstruir Array (Rebuild)" para restaurar el servicio.',
+              'ARRAY INOPERATIVO'
+            );
+          } else if (r1Ok < 2 || r5Ok < 3) {
+            setSimBanner(
+              'degraded',
+              '⚠️',
+              `Disco ${targetDisk.name} Desconectado: Operando en Modo Degradado sin Pérdida de Datos`,
+              'El sistema sigue leyendo y escribiendo con normalidad gracias a la redundancia restante. Pulsa "Reconstruir Array" para resincronizar.',
+              'MODO DEGRADADO'
+            );
+          } else {
+            setSimBanner(
+              'read',
+              '✅',
+              `Disco ${targetDisk.name} Reconectado: Matrices Sincronizadas ([UU] y [UUU])`,
+              'Todos los dispositivos miembros vuelven a encontrarse operativos.',
+              'Estado: CLEAN'
+            );
+          }
+          renderSimulator();
+        });
+
+        // Vista 2: Cambio de vista en la consola del kernel
+        document.querySelectorAll('.term-mode-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.termView = btn.getAttribute('data-term-view');
+            document.querySelectorAll('.term-mode-btn').forEach(b => {
+              const active = b === btn;
+              b.className = active
+                ? 'term-mode-btn px-2.5 py-1 rounded text-xs font-mono font-semibold bg-[#1E3A8A] text-white'
+                : 'term-mode-btn px-2.5 py-1 rounded text-xs font-mono font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700';
+            });
+            renderLiveTerminal();
+          });
+        });
+
+        // Vista 3: Selección de capa de configuración
+        document.querySelectorAll('.layer-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.activeLayer = btn.getAttribute('data-layer');
+            state.selectedTokenIndex = 0;
+            renderLayerDetail();
+          });
+        });
+
+        // Vista 3: Selección de comando/token dentro de la capa activa
+        document.getElementById('layer-detail-container')?.addEventListener('click', (e) => {
+          const tokenEl = e.target.closest('[data-token-idx]');
+          if (!tokenEl) return;
+          state.selectedTokenIndex = parseInt(tokenEl.getAttribute('data-token-idx'), 10);
+          renderLayerDetail();
+        });
+
+        // Vista 4: Buscador instantáneo del glosario
+        document.getElementById('glossary-search')?.addEventListener('input', (e) => {
+          renderGlossary(e.target.value);
+        });
+
+        // Inicialización de todas las vistas
+        renderArchInspector();
+        renderSimulator();
+        renderLayerDetail();
+        renderGlossary();
+      });
+    })();
+  </script>
+</body>
+</html>
